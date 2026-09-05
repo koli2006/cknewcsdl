@@ -27,4 +27,3 @@ ENV PORT=8000
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome
 
 CMD ["npm", "start"]
-
