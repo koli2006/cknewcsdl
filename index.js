@@ -37,15 +37,19 @@ app.get('/api/finaldl', async (req, res) => {
 
     let browser;
     try {
+        // Chromium crash වෙන එක වළක්වන Flags සමඟ Launch කිරීම
         browser = await puppeteer.launch({
-            headless: true,
+            headless: 'new',
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
-                '--single-process',
+                '--disable-software-rasterizer',
+                '--disable-extensions',
+                '--no-first-run',
+                '--no-zygote',
                 '--disable-blink-features=AutomationControlled'
             ]
         });
@@ -189,4 +193,3 @@ app.get('/api/finaldl', async (req, res) => {
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log('🚀 Sniper v15 Active on Koyeb port', PORT));
-
