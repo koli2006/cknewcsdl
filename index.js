@@ -14,12 +14,9 @@ function isSafeUrl(url) {
     } catch(e) { return false; }
 }
 
-app.get('/', (req, res) => {
-    res.json({ status: 'CineSubz Sniper v15 Intelligent De-Duplicator Online (Koyeb Node)' });
-});
+app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Ultra-Fast Online' }));
 
 app.get('/api/finaldl', async (req, res) => {
-    // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -31,13 +28,9 @@ app.get('/api/finaldl', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Invalid or missing URL parameter' });
     }
 
-    console.log('\n' + '='.repeat(60));
-    console.log('🚀 [LAUNCH v15 SMART MULTI KOYEB] TARGET:', targetUrl);
-    console.log('='.repeat(60));
-
     let browser;
     try {
-        // Chromium crash වෙන එක වළක්වන Flags සමඟ Launch කිරීම
+        // Ultra-Lightweight Chrome Launch Flags
         browser = await puppeteer.launch({
             headless: 'new',
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
@@ -50,17 +43,35 @@ app.get('/api/finaldl', async (req, res) => {
                 '--disable-extensions',
                 '--no-first-run',
                 '--no-zygote',
+                '--disable-remote-fonts',
+                '--disable-background-networking',
+                '--disable-background-timer-throttling',
+                '--disable-client-side-phishing-detection',
+                '--disable-default-apps',
+                '--disable-sync',
+                '--metrics-recording-only',
                 '--disable-blink-features=AutomationControlled'
             ]
         });
 
         const page = await browser.newPage();
+
+        // ⚡ [SPEED BOOST 1]: Network level image/style/font blocking
+        await page.setRequestInterception(true);
+        page.on('request', (req) => {
+            const resourceType = req.resourceType();
+            if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+                req.abort();
+            } else {
+                req.continue();
+            }
+        });
+
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-        await page.setViewport({ width: 1440, height: 900 });
+        await page.setViewport({ width: 1280, height: 720 });
 
         let rawUrls = []; 
 
-        // ── 🛡️ [GHOST SHIELD v15] ─────────────────────────────────────
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {} };
@@ -77,16 +88,13 @@ app.get('/api/finaldl', async (req, res) => {
             console.clear = function() {};
         });
 
-        // ── DOM LOADING ───────────────────────────────────────────
-        console.log('[1] Loading Target DOM smoothly...');
-        await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        // ⚡ [SPEED BOOST 2]: Networkidle වෙනුවට domcontentloaded පාවිච්චි කර timeout එක 15s කිරීම
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
         
-        console.log('[2] Holding 4 seconds for script activation...');
-        await new Promise(r => setTimeout(r, 4000));
+        // Holding time එක 4s සිට 1.5s දක්වා අඩු කර ඇත
+        await new Promise(r => setTimeout(r, 1500));
 
-        // ── 🖱️ MULTI-BUTTON LOCATOR & SIMULATOR ───────────────────
-        console.log('[3] Scanning for all Download Elements...');
-        
+        // ── MULTI-BUTTON LOCATOR & SIMULATOR ───────────────────
         const allButtonCoordinates = await page.evaluate(() => {
             let coordsList = [];
             const selectors = [
@@ -129,22 +137,15 @@ app.get('/api/finaldl', async (req, res) => {
             return coordsList;
         });
 
-        console.log(`🎯 Found ${allButtonCoordinates.length} potential download elements.`);
-
-        for (let i = 0; i < allButtonCoordinates.length; i++) {
+        // ⚡ [SPEED BOOST 3]: පළමු බටන් 2ක් විතරක් 500ms ඇතුළත ක්ලික් කිරීම
+        for (let i = 0; i < Math.min(allButtonCoordinates.length, 2); i++) {
             const coord = allButtonCoordinates[i];
-            console.log(`🖱️ Clicking Button [${i + 1}] at X: ${coord.x}, Y: ${coord.y}`);
-            
             await page.mouse.move(coord.x, coord.y);
             await page.mouse.down();
             await page.mouse.up();
-            
-            await new Promise(r => setTimeout(r, 1500));
+            await new Promise(r => setTimeout(r, 500));
         }
 
-        // ── COLLECTING & INTELLIGENT DE-DUPLICATION ────────────────
-        console.log('[4] Gathering and filtering harvested payload streams...');
-        
         const windowOpenUrls = await page.evaluate(() => window._multiCapturedUrls || []).catch(() => []);
         windowOpenUrls.forEach(u => rawUrls.push(u));
 
@@ -154,11 +155,10 @@ app.get('/api/finaldl', async (req, res) => {
         let uniqueUrlsMap = new Map();
 
         rawUrls.forEach(urlStr => {
-            if (urlStr.includes('yadev511.xyz') || urlStr.includes('pixeldrain.com') || urlStr.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(urlStr)) {
+            if (urlStr.includes('yadev511.xyz') || urlStr.includes('drive06.skylines822.online') || urlStr.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(urlStr)) {
                 try {
                     const u = new URL(urlStr);
                     const cleanPath = u.origin + u.pathname; 
-                    
                     if (!uniqueUrlsMap.has(cleanPath)) {
                         uniqueUrlsMap.set(cleanPath, urlStr);
                     }
@@ -169,27 +169,24 @@ app.get('/api/finaldl', async (req, res) => {
         });
 
         const resultArray = Array.from(uniqueUrlsMap.values());
+        await browser.close().catch(() => {});
 
         if (resultArray.length > 0) {
-            console.log(`🏁 [SUCCESS v15] Filtered down to ${resultArray.length} Unique Links:`, resultArray);
-            res.json({
+            return res.json({
                 success: true,
                 count: resultArray.length,
                 download_urls: resultArray
             });
         } else {
-            console.log('❌ [TIMEOUT] No unique download streams detected.');
-            res.json({ success: false, error: 'No unique download streams detected from the elements.' });
+            return res.json({ success: false, error: 'No unique download streams detected.' });
         }
 
-        await browser.close().catch(() => {});
-
     } catch(err) {
-        console.error('💥 SYSTEM FATAL:', err.message);
         if (browser) await browser.close().catch(() => {});
-        res.status(500).json({ success: false, error: err.message });
+        return res.status(500).json({ success: false, error: err.message });
     }
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log('🚀 Sniper v15 Active on Koyeb port', PORT));
+app.listen(PORT, () => console.log('🚀 Fast Sniper v15 Active on port', PORT));
+
