@@ -97,6 +97,8 @@ app.get('/api/finaldl', async (req, res) => {
                 '.button[class*="download"]', 
                 'a[href*="yadev511"]', 
                 'a[href*="pixeldrain"]',
+                'a[href*="drive06.skylines822.online"]',
+                'a[href*="drive02.skylines822.online"]',
                 'button[class*="download"]', 
                 '.btn-success'
             ];
