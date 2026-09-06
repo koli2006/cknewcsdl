@@ -55,7 +55,6 @@ app.get('/api/finaldl', async (req, res) => {
 
         const page = await browser.newPage();
 
-        // Image, Stylesheet, Fonts block කර Speed එක වැඩි කිරීම
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             const resourceType = req.resourceType();
@@ -87,59 +86,72 @@ app.get('/api/finaldl', async (req, res) => {
             console.clear = function() {};
         });
 
-        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-        await new Promise(r => setTimeout(r, 1500));
+        // Safe Navigation with Networkidle2
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+        await new Promise(r => setTimeout(r, 2000));
 
-        const allButtonCoordinates = await page.evaluate(() => {
-            let coordsList = [];
-            const selectors = [
-                '.button.direct-download', 
-                '.button[class*="download"]', 
-                'a[href*="yadev511"]', 
-                'a[href*="pixeldrain"]',
-                'a[href*="drive06.skylines822.online"]',
-                'a[href*="drive02.skylines822.online"]',
-                'button[class*="download"]', 
-                '.btn-success'
-            ];
-            
-            let elements = [];
-            selectors.forEach(sel => {
-                document.querySelectorAll(sel).forEach(el => {
-                    if (!elements.includes(el) && el.offsetWidth > 0 && el.offsetHeight > 0) {
+        // Safely extract coordinates without context error
+        let allButtonCoordinates = [];
+        try {
+            allButtonCoordinates = await page.evaluate(() => {
+                let coordsList = [];
+                const selectors = [
+                    '.button.direct-download', 
+                    '.button[class*="download"]', 
+                    'a[href*="yadev511"]', 
+                    'a[href*="pixeldrain"]',
+                    'a[href*="drive06.skylines822.online"]',
+                    'a[href*="drive02.skylines822.online"]',
+                    'button[class*="download"]', 
+                    '.btn-success'
+                ];
+                
+                let elements = [];
+                selectors.forEach(sel => {
+                    document.querySelectorAll(sel).forEach(el => {
+                        if (!elements.includes(el) && el.offsetWidth > 0 && el.offsetHeight > 0) {
+                            elements.push(el);
+                        }
+                    });
+                });
+
+                const allElements = document.querySelectorAll('a, button');
+                for (let el of allElements) {
+                    const text = (el.innerText || '').toLowerCase();
+                    if ((text.includes('download') || text.includes('direct')) && !text.includes('telegram') && !elements.includes(el) && el.offsetWidth > 0) {
                         elements.push(el);
                     }
-                });
-            });
-
-            const allElements = document.querySelectorAll('a, button');
-            for (let el of allElements) {
-                const text = (el.innerText || '').toLowerCase();
-                if ((text.includes('download') || text.includes('direct')) && !text.includes('telegram') && !elements.includes(el) && el.offsetWidth > 0) {
-                    elements.push(el);
                 }
-            }
 
-            elements.forEach(btn => {
-                btn.removeAttribute('disabled');
-                btn.style.pointerEvents = 'auto';
-                btn.style.opacity = '1';
-                const rect = btn.getBoundingClientRect();
-                coordsList.push({
-                    x: rect.left + rect.width / 2,
-                    y: rect.top + rect.height / 2
+                elements.forEach(btn => {
+                    btn.removeAttribute('disabled');
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                    const rect = btn.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        coordsList.push({
+                            x: rect.left + rect.width / 2,
+                            y: rect.top + rect.height / 2
+                        });
+                    }
                 });
-            });
 
-            return coordsList;
-        });
+                return coordsList;
+            });
+        } catch (e) {
+            console.log('Navigation happened during evaluation, continuing...');
+        }
 
         for (let i = 0; i < Math.min(allButtonCoordinates.length, 2); i++) {
             const coord = allButtonCoordinates[i];
-            await page.mouse.move(coord.x, coord.y);
-            await page.mouse.down();
-            await page.mouse.up();
-            await new Promise(r => setTimeout(r, 500));
+            try {
+                await page.mouse.move(coord.x, coord.y);
+                await page.mouse.down();
+                await page.mouse.up();
+            } catch (err) {
+                // Ignore mouse click failures if page navigated
+            }
+            await new Promise(r => setTimeout(r, 1000));
         }
 
         const windowOpenUrls = await page.evaluate(() => window._multiCapturedUrls || []).catch(() => []);
