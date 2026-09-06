@@ -14,11 +14,12 @@ function isSafeUrl(url) {
     } catch(e) { return false; }
 }
 
-app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Intelligent De-Duplicator Online (Koyeb Node)' }));
+app.get('/', (req, res) => {
+    res.json({ status: 'CineSubz Sniper v15 Intelligent De-Duplicator Online (Koyeb Node)' });
+});
 
-// Endpoint එක '/bypass' හෝ '/api/finaldl' ලෙස තබා ගත හැක
-app.get('/bypass', async (req, res) => {
-    // CORS Headers (Bot / Web Frontend වලට Request යැවීමට පහසු වීමට)
+app.get('/api/finaldl', async (req, res) => {
+    // CORS Headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -26,15 +27,17 @@ app.get('/bypass', async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const targetUrl = req.query.url;
-    if (!targetUrl || !isSafeUrl(targetUrl)) return res.status(400).json({ success: false, error: 'Invalid URL' });
+    if (!targetUrl || !isSafeUrl(targetUrl)) {
+        return res.status(400).json({ success: false, error: 'Invalid or missing URL parameter' });
+    }
 
     console.log('\n' + '='.repeat(60));
-    console.log('🚀 [LAUNCH v15 SMART MULTI] TARGET:', targetUrl);
+    console.log('🚀 [LAUNCH v15 SMART MULTI KOYEB] TARGET:', targetUrl);
     console.log('='.repeat(60));
 
     let browser;
     try {
-        // Koyeb Environment එකට ගැලපෙන ලෙස Safe Launch Flags සැකසීම
+        // Chromium crash වෙන එක වළක්වන Flags සමඟ Launch කිරීම
         browser = await puppeteer.launch({
             headless: 'new',
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
@@ -61,7 +64,6 @@ app.get('/bypass', async (req, res) => {
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {} };
-            window.alart = function() { return true; };
             window.alert = function() { return true; };
 
             window._multiCapturedUrls = [];
@@ -189,6 +191,5 @@ app.get('/bypass', async (req, res) => {
     }
 });
 
-// Koyeb Port Config
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log('🚀 Sniper v15 Active on port', PORT));
+app.listen(PORT, () => console.log('🚀 Sniper v15 Active on Koyeb port', PORT));
