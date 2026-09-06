@@ -1,16 +1,17 @@
 {
-  "name": "cinesubz-sniper-koyeb",
-  "version": "15.0.0",
-  "description": "CineSubz Sniper v15 De-Duplicator API",
-  "main": "index.js",
+  "name": "cinesubz-sniper-api",
+  "version": "1.0.0",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "puppeteer-core": "^22.6.0",
+    "puppeteer": "^22.0.0",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "puppeteer": "^22.0.0"
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
