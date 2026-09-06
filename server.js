@@ -1,6 +1,8 @@
 const express = require('express');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const fs = require('fs');
+
 puppeteer.use(StealthPlugin());
 const app = express();
 
@@ -25,9 +27,20 @@ app.get('/bypass', async (req, res) => {
 
     let browser;
     try {
+        // System Chromiums Auto-detect කිරීම
+        let chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        if (!chromePath || !fs.existsSync(chromePath)) {
+            const possiblePaths = [
+                '/usr/bin/chromium',
+                '/usr/bin/chromium-browser',
+                '/usr/bin/google-chrome-stable'
+            ];
+            chromePath = possiblePaths.find(p => fs.existsSync(p));
+        }
+
         browser = await puppeteer.launch({
             headless: 'new',
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
+            executablePath: chromePath,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
