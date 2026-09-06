@@ -14,9 +14,11 @@ function isSafeUrl(url) {
     } catch(e) { return false; }
 }
 
-app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Active' }));
+app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Intelligent De-Duplicator Online (Koyeb Node)' }));
 
-app.get('/api/finaldl', async (req, res) => {
+// Endpoint එක '/bypass' හෝ '/api/finaldl' ලෙස තබා ගත හැක
+app.get('/bypass', async (req, res) => {
+    // CORS Headers (Bot / Web Frontend වලට Request යැවීමට පහසු වීමට)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -24,12 +26,15 @@ app.get('/api/finaldl', async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
     const targetUrl = req.query.url;
-    if (!targetUrl || !isSafeUrl(targetUrl)) {
-        return res.status(400).json({ success: false, error: 'Invalid or missing URL parameter' });
-    }
+    if (!targetUrl || !isSafeUrl(targetUrl)) return res.status(400).json({ success: false, error: 'Invalid URL' });
+
+    console.log('\n' + '='.repeat(60));
+    console.log('🚀 [LAUNCH v15 SMART MULTI] TARGET:', targetUrl);
+    console.log('='.repeat(60));
 
     let browser;
     try {
+        // Koyeb Environment එකට ගැලපෙන ලෙස Safe Launch Flags සැකසීම
         browser = await puppeteer.launch({
             headless: 'new',
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
@@ -47,33 +52,16 @@ app.get('/api/finaldl', async (req, res) => {
         });
 
         const page = await browser.newPage();
-        let rawUrls = [];
-
-        // 🎯 [NETWORK SNIPER]: Back-end network requests වලින් සෘජුවම Download links Capture කිරීම
-        page.on('request', request => {
-            const reqUrl = request.url();
-            if (reqUrl.includes('yadev511.xyz') || reqUrl.includes('pixeldrain.com') || reqUrl.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(reqUrl)) {
-                rawUrls.push(reqUrl);
-            }
-        });
-
-        // Image සහ Font විතරක් Block කර Script/Style Load වීමට ඉඩ හැරීම
-        await page.setRequestInterception(true);
-        page.on('request', (req) => {
-            const resourceType = req.resourceType();
-            if (['image', 'font', 'media'].includes(resourceType)) {
-                req.abort();
-            } else {
-                req.continue();
-            }
-        });
-
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-        await page.setViewport({ width: 1280, height: 720 });
+        await page.setViewport({ width: 1440, height: 900 });
 
+        let rawUrls = []; 
+
+        // ── 🛡️ [GHOST SHIELD v15] ─────────────────────────────────────
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {} };
+            window.alart = function() { return true; };
             window.alert = function() { return true; };
 
             window._multiCapturedUrls = [];
@@ -83,79 +71,84 @@ app.get('/api/finaldl', async (req, res) => {
                 }
                 return { closed: false, close: () => {} };
             };
+            console.log = function() {};
+            console.clear = function() {};
         });
 
-        // Page එක Load වීමට 3s-4s තත්පර ලබා දීම
-        await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
-        await new Promise(r => setTimeout(r, 3000));
+        // ── DOM LOADING ───────────────────────────────────────────
+        console.log('[1] Loading Target DOM smoothly...');
+        await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+        
+        console.log('[2] Holding 4 seconds for script activation...');
+        await new Promise(r => setTimeout(r, 4000));
 
-        // Click Simulation
-        let allButtonCoordinates = [];
-        try {
-            allButtonCoordinates = await page.evaluate(() => {
-                let coordsList = [];
-                const selectors = [
-                    '.button.direct-download', 
-                    '.button[class*="download"]', 
-                    'a[href*="yadev511"]', 
-                    'a[href*="pixeldrain"]',
-                    'a[href*="drive06.skylines822.online"]',
-                    'a[href*="drive02.skylines822.online"]',
-                    'button[class*="download"]', 
-                    '.btn-success'
-                ];
-                
-                let elements = [];
-                selectors.forEach(sel => {
-                    document.querySelectorAll(sel).forEach(el => {
-                        if (!elements.includes(el) && el.offsetWidth > 0 && el.offsetHeight > 0) {
-                            elements.push(el);
-                        }
-                    });
-                });
-
-                const allElements = document.querySelectorAll('a, button');
-                for (let el of allElements) {
-                    const text = (el.innerText || '').toLowerCase();
-                    if ((text.includes('download') || text.includes('direct')) && !text.includes('telegram') && !elements.includes(el) && el.offsetWidth > 0) {
+        // ── 🖱️ MULTI-BUTTON LOCATOR & SIMULATOR ───────────────────
+        console.log('[3] Scanning for all Download Elements...');
+        
+        const allButtonCoordinates = await page.evaluate(() => {
+            let coordsList = [];
+            const selectors = [
+                '.button.direct-download', 
+                '.button[class*="download"]', 
+                'a[href*="yadev511"]', 
+                'a[href*="pixeldrain"]',
+                'button[class*="download"]', 
+                '.btn-success'
+            ];
+            
+            let elements = [];
+            selectors.forEach(sel => {
+                document.querySelectorAll(sel).forEach(el => {
+                    if (!elements.includes(el) && el.offsetWidth > 0 && el.offsetHeight > 0) {
                         elements.push(el);
                     }
-                }
-
-                elements.forEach(btn => {
-                    btn.removeAttribute('disabled');
-                    btn.style.pointerEvents = 'auto';
-                    btn.style.opacity = '1';
-                    const rect = btn.getBoundingClientRect();
-                    if (rect.width > 0 && rect.height > 0) {
-                        coordsList.push({
-                            x: rect.left + rect.width / 2,
-                            y: rect.top + rect.height / 2
-                        });
-                    }
                 });
-
-                return coordsList;
             });
-        } catch (e) {}
 
-        for (let i = 0; i < Math.min(allButtonCoordinates.length, 3); i++) {
+            const allElements = document.querySelectorAll('a, button');
+            for (let el of allElements) {
+                const text = (el.innerText || '').toLowerCase();
+                if ((text.includes('download') || text.includes('direct')) && !text.includes('telegram') && !elements.includes(el) && el.offsetWidth > 0) {
+                    elements.push(el);
+                }
+            }
+
+            elements.forEach(btn => {
+                btn.removeAttribute('disabled');
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+                const rect = btn.getBoundingClientRect();
+                coordsList.push({
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2
+                });
+            });
+
+            return coordsList;
+        });
+
+        console.log(`🎯 Found ${allButtonCoordinates.length} potential download elements.`);
+
+        for (let i = 0; i < allButtonCoordinates.length; i++) {
             const coord = allButtonCoordinates[i];
-            try {
-                await page.mouse.move(coord.x, coord.y);
-                await page.mouse.down();
-                await page.mouse.up();
-            } catch (err) {}
-            await new Promise(r => setTimeout(r, 1200));
+            console.log(`🖱️ Clicking Button [${i + 1}] at X: ${coord.x}, Y: ${coord.y}`);
+            
+            await page.mouse.move(coord.x, coord.y);
+            await page.mouse.down();
+            await page.mouse.up();
+            
+            await new Promise(r => setTimeout(r, 1500));
         }
 
+        // ── COLLECTING & INTELLIGENT DE-DUPLICATION ────────────────
+        console.log('[4] Gathering and filtering harvested payload streams...');
+        
         const windowOpenUrls = await page.evaluate(() => window._multiCapturedUrls || []).catch(() => []);
         windowOpenUrls.forEach(u => rawUrls.push(u));
 
         const finalPageUrl = await page.url();
         rawUrls.push(finalPageUrl);
 
-        // Deduplication Logic
         let uniqueUrlsMap = new Map();
 
         rawUrls.forEach(urlStr => {
@@ -163,6 +156,7 @@ app.get('/api/finaldl', async (req, res) => {
                 try {
                     const u = new URL(urlStr);
                     const cleanPath = u.origin + u.pathname; 
+                    
                     if (!uniqueUrlsMap.has(cleanPath)) {
                         uniqueUrlsMap.set(cleanPath, urlStr);
                     }
@@ -173,23 +167,28 @@ app.get('/api/finaldl', async (req, res) => {
         });
 
         const resultArray = Array.from(uniqueUrlsMap.values());
-        await browser.close().catch(() => {});
 
         if (resultArray.length > 0) {
-            return res.json({
+            console.log(`🏁 [SUCCESS v15] Filtered down to ${resultArray.length} Unique Links:`, resultArray);
+            res.json({
                 success: true,
                 count: resultArray.length,
                 download_urls: resultArray
             });
         } else {
-            return res.json({ success: false, error: 'No unique download streams detected.' });
+            console.log('❌ [TIMEOUT] No unique download streams detected.');
+            res.json({ success: false, error: 'No unique download streams detected from the elements.' });
         }
 
+        await browser.close().catch(() => {});
+
     } catch(err) {
+        console.error('💥 SYSTEM FATAL:', err.message);
         if (browser) await browser.close().catch(() => {});
-        return res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
+// Koyeb Port Config
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log('🚀 Sniper Active on port', PORT));
+app.listen(PORT, () => console.log('🚀 Sniper v15 Active on port', PORT));
