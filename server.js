@@ -27,13 +27,17 @@ app.get('/bypass', async (req, res) => {
     try {
         browser = await puppeteer.launch({
             headless: 'new',
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-gpu',
+                '--no-first-run',
+                '--no-zygote',
                 '--single-process',
+                '--disable-accelerated-2d-canvas',
+                '--disable-software-rasterizer',
                 '--disable-blink-features=AutomationControlled'
             ]
         });
@@ -42,8 +46,10 @@ app.get('/bypass', async (req, res) => {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
         await page.setViewport({ width: 1440, height: 900 });
 
+        // Raw ලින්ක්ස් ටික එකතු කරන්න Array එකක්
         let rawUrls = []; 
 
+        // ── 🛡️ [GHOST SHIELD v15] ─────────────────────────────────────
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {} };
@@ -61,12 +67,14 @@ app.get('/bypass', async (req, res) => {
             console.clear = function() {};
         });
 
+        // ── DOM LOADING ───────────────────────────────────────────
         console.log('[1] Loading Target DOM smoothly...');
         await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 30000 });
         
         console.log('[2] Holding 4 seconds for script activation...');
         await new Promise(r => setTimeout(r, 4000));
 
+        // ── 🖱️ MULTI-BUTTON LOCATOR & SIMULATOR ───────────────────
         console.log('[3] Scanning for all Download Elements...');
         
         const allButtonCoordinates = await page.evaluate(() => {
@@ -92,6 +100,7 @@ app.get('/bypass', async (req, res) => {
             const allElements = document.querySelectorAll('a, button');
             for (let el of allElements) {
                 const text = (el.innerText || '').toLowerCase();
+                // Telegram බටන් ක්ලික් වෙන එක නවත්තන්න text.includes('telegram') අයින් කරා
                 if ((text.includes('download') || text.includes('direct')) && !text.includes('telegram') && !elements.includes(el) && el.offsetWidth > 0) {
                     elements.push(el);
                 }
@@ -124,6 +133,7 @@ app.get('/bypass', async (req, res) => {
             await new Promise(r => setTimeout(r, 1500));
         }
 
+        // ── COLLECTING & INTELLIGENT DE-DUPLICATION ────────────────
         console.log('[4] Gathering and filtering harvested payload streams...');
         
         const windowOpenUrls = await page.evaluate(() => window._multiCapturedUrls || []).catch(() => []);
@@ -132,16 +142,18 @@ app.get('/bypass', async (req, res) => {
         const finalPageUrl = await page.url();
         rawUrls.push(finalPageUrl);
 
+        // 🔥 [SMART FILTER LOGIC]: එකම ලින්ක් එක වෙනස් ටෝකන් වලින් එන එක සෝදලා පිරිසිදු කරයි
         let uniqueUrlsMap = new Map();
 
         rawUrls.forEach(urlStr => {
             if (urlStr.includes('yadev511.xyz') || urlStr.includes('pixeldrain.com') || urlStr.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(urlStr)) {
                 try {
                     const u = new URL(urlStr);
+                    // ටෝකන් සහ අනෙකුත් Query Params නැතිව සැබෑ File Path එක විතරක් ගන්නවා
                     const cleanPath = u.origin + u.pathname; 
                     
                     if (!uniqueUrlsMap.has(cleanPath)) {
-                        uniqueUrlsMap.set(cleanPath, urlStr);
+                        uniqueUrlsMap.set(cleanPath, urlStr); // සම්පූර්ණ ලින්ක් එකම සේව් කරගන්නවා
                     }
                 } catch (e) {
                     if (!uniqueUrlsMap.has(urlStr)) uniqueUrlsMap.set(urlStr, urlStr);
