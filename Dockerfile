@@ -1,5 +1,6 @@
 FROM node:18-slim
 
+# Install Chrome dependencies & Google Chrome Stable
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
