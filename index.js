@@ -14,7 +14,7 @@ function isSafeUrl(url) {
     } catch(e) { return false; }
 }
 
-app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Ultra-Fast Online' }));
+app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Active' }));
 
 app.get('/api/finaldl', async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,23 +42,26 @@ app.get('/api/finaldl', async (req, res) => {
                 '--disable-extensions',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-remote-fonts',
-                '--disable-background-networking',
-                '--disable-background-timer-throttling',
-                '--disable-client-side-phishing-detection',
-                '--disable-default-apps',
-                '--disable-sync',
-                '--metrics-recording-only',
                 '--disable-blink-features=AutomationControlled'
             ]
         });
 
         const page = await browser.newPage();
+        let rawUrls = [];
 
+        // 🎯 [NETWORK SNIPER]: Back-end network requests වලින් සෘජුවම Download links Capture කිරීම
+        page.on('request', request => {
+            const reqUrl = request.url();
+            if (reqUrl.includes('yadev511.xyz') || reqUrl.includes('pixeldrain.com') || reqUrl.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(reqUrl)) {
+                rawUrls.push(reqUrl);
+            }
+        });
+
+        // Image සහ Font විතරක් Block කර Script/Style Load වීමට ඉඩ හැරීම
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             const resourceType = req.resourceType();
-            if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
+            if (['image', 'font', 'media'].includes(resourceType)) {
                 req.abort();
             } else {
                 req.continue();
@@ -67,8 +70,6 @@ app.get('/api/finaldl', async (req, res) => {
 
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
         await page.setViewport({ width: 1280, height: 720 });
-
-        let rawUrls = []; 
 
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
@@ -82,15 +83,13 @@ app.get('/api/finaldl', async (req, res) => {
                 }
                 return { closed: false, close: () => {} };
             };
-            console.log = function() {};
-            console.clear = function() {};
         });
 
-        // Safe Navigation with Networkidle2
-        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
-        await new Promise(r => setTimeout(r, 2000));
+        // Page එක Load වීමට 3s-4s තත්පර ලබා දීම
+        await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 25000 }).catch(() => {});
+        await new Promise(r => setTimeout(r, 3000));
 
-        // Safely extract coordinates without context error
+        // Click Simulation
         let allButtonCoordinates = [];
         try {
             allButtonCoordinates = await page.evaluate(() => {
@@ -138,20 +137,16 @@ app.get('/api/finaldl', async (req, res) => {
 
                 return coordsList;
             });
-        } catch (e) {
-            console.log('Navigation happened during evaluation, continuing...');
-        }
+        } catch (e) {}
 
-        for (let i = 0; i < Math.min(allButtonCoordinates.length, 2); i++) {
+        for (let i = 0; i < Math.min(allButtonCoordinates.length, 3); i++) {
             const coord = allButtonCoordinates[i];
             try {
                 await page.mouse.move(coord.x, coord.y);
                 await page.mouse.down();
                 await page.mouse.up();
-            } catch (err) {
-                // Ignore mouse click failures if page navigated
-            }
-            await new Promise(r => setTimeout(r, 1000));
+            } catch (err) {}
+            await new Promise(r => setTimeout(r, 1200));
         }
 
         const windowOpenUrls = await page.evaluate(() => window._multiCapturedUrls || []).catch(() => []);
@@ -160,6 +155,7 @@ app.get('/api/finaldl', async (req, res) => {
         const finalPageUrl = await page.url();
         rawUrls.push(finalPageUrl);
 
+        // Deduplication Logic
         let uniqueUrlsMap = new Map();
 
         rawUrls.forEach(urlStr => {
@@ -196,4 +192,4 @@ app.get('/api/finaldl', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log('🚀 Fast Sniper v15 Active on port', PORT));
+app.listen(PORT, () => console.log('🚀 Sniper Active on port', PORT));
