@@ -30,7 +30,6 @@ app.get('/api/finaldl', async (req, res) => {
 
     let browser;
     try {
-        // Ultra-Lightweight Chrome Launch Flags
         browser = await puppeteer.launch({
             headless: 'new',
             executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome',
@@ -56,7 +55,7 @@ app.get('/api/finaldl', async (req, res) => {
 
         const page = await browser.newPage();
 
-        // ⚡ [SPEED BOOST 1]: Network level image/style/font blocking
+        // Image, Stylesheet, Fonts block කර Speed එක වැඩි කිරීම
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             const resourceType = req.resourceType();
@@ -88,13 +87,9 @@ app.get('/api/finaldl', async (req, res) => {
             console.clear = function() {};
         });
 
-        // ⚡ [SPEED BOOST 2]: Networkidle වෙනුවට domcontentloaded පාවිච්චි කර timeout එක 15s කිරීම
         await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-        
-        // Holding time එක 4s සිට 1.5s දක්වා අඩු කර ඇත
         await new Promise(r => setTimeout(r, 1500));
 
-        // ── MULTI-BUTTON LOCATOR & SIMULATOR ───────────────────
         const allButtonCoordinates = await page.evaluate(() => {
             let coordsList = [];
             const selectors = [
@@ -137,7 +132,6 @@ app.get('/api/finaldl', async (req, res) => {
             return coordsList;
         });
 
-        // ⚡ [SPEED BOOST 3]: පළමු බටන් 2ක් විතරක් 500ms ඇතුළත ක්ලික් කිරීම
         for (let i = 0; i < Math.min(allButtonCoordinates.length, 2); i++) {
             const coord = allButtonCoordinates[i];
             await page.mouse.move(coord.x, coord.y);
@@ -155,7 +149,7 @@ app.get('/api/finaldl', async (req, res) => {
         let uniqueUrlsMap = new Map();
 
         rawUrls.forEach(urlStr => {
-            if (urlStr.includes('yadev511.xyz') || urlStr.includes('drive06.skylines822.online') || urlStr.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(urlStr)) {
+            if (urlStr.includes('yadev511.xyz') || urlStr.includes('pixeldrain.com') || urlStr.includes('videoplayback') || /\.(mp4|mkv|m3u8)/i.test(urlStr)) {
                 try {
                     const u = new URL(urlStr);
                     const cleanPath = u.origin + u.pathname; 
@@ -189,4 +183,3 @@ app.get('/api/finaldl', async (req, res) => {
 
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log('🚀 Fast Sniper v15 Active on port', PORT));
-
