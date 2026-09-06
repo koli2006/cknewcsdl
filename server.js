@@ -1,8 +1,6 @@
 const express = require('express');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const fs = require('fs');
-
 puppeteer.use(StealthPlugin());
 const app = express();
 
@@ -15,7 +13,7 @@ function isSafeUrl(url) {
     } catch(e) { return false; }
 }
 
-app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Intelligent De-Duplicator Online' }));
+app.get('/', (req, res) => res.json({ status: 'CineSubz Sniper v15 Intelligent De-Duplicator Online (Replit Version)' }));
 
 app.get('/bypass', async (req, res) => {
     const targetUrl = req.query.url;
@@ -27,30 +25,20 @@ app.get('/bypass', async (req, res) => {
 
     let browser;
     try {
-        // System Chromiums Auto-detect කිරීම
-        let chromePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-        if (!chromePath || !fs.existsSync(chromePath)) {
-            const possiblePaths = [
-                '/usr/bin/chromium',
-                '/usr/bin/chromium-browser',
-                '/usr/bin/google-chrome-stable'
-            ];
-            chromePath = possiblePaths.find(p => fs.existsSync(p));
-        }
+        // Replit සඳහා Chromium path එක process.env.PUPPETEER_EXECUTABLE_PATH මගින් හෝ ඍජුවම ලබා දීම
+        const chromePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser' || '/usr/bin/chromium';
 
         browser = await puppeteer.launch({
-            headless: 'new',
+            headless: true,
             executablePath: chromePath,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
-                '--disable-gpu',
+                '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process',
-                '--disable-accelerated-2d-canvas',
-                '--disable-software-rasterizer',
+                '--disable-gpu',
                 '--disable-blink-features=AutomationControlled'
             ]
         });
@@ -61,6 +49,7 @@ app.get('/bypass', async (req, res) => {
 
         let rawUrls = []; 
 
+        // ── 🛡️ [GHOST SHIELD v15] ─────────────────────────────────────
         await page.evaluateOnNewDocument(() => {
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             window.chrome = { runtime: {}, loadTimes: function() {}, csi: function() {} };
@@ -78,12 +67,14 @@ app.get('/bypass', async (req, res) => {
             console.clear = function() {};
         });
 
+        // ── DOM LOADING ───────────────────────────────────────────
         console.log('[1] Loading Target DOM smoothly...');
         await page.goto(targetUrl, { waitUntil: 'networkidle2', timeout: 30000 });
         
         console.log('[2] Holding 4 seconds for script activation...');
         await new Promise(r => setTimeout(r, 4000));
 
+        // ── 🖱️ MULTI-BUTTON LOCATOR & SIMULATOR ───────────────────
         console.log('[3] Scanning for all Download Elements...');
         
         const allButtonCoordinates = await page.evaluate(() => {
@@ -141,6 +132,7 @@ app.get('/bypass', async (req, res) => {
             await new Promise(r => setTimeout(r, 1500));
         }
 
+        // ── COLLECTING & INTELLIGENT DE-DUPLICATION ────────────────
         console.log('[4] Gathering and filtering harvested payload streams...');
         
         const windowOpenUrls = await page.evaluate(() => window._multiCapturedUrls || []).catch(() => []);
@@ -189,5 +181,6 @@ app.get('/bypass', async (req, res) => {
     }
 });
 
+// Replit එක සදහා Port එක 3000 හෝ Environment Port එක භාවිතා කිරීම
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('🚀 Sniper v15 Active on port', PORT));
+app.listen(PORT, '0.0.0.0', () => console.log('🚀 Sniper v15 Active on port', PORT));
