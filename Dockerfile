@@ -1,6 +1,6 @@
 FROM node:18-slim
 
-# Chromium සහ අවශ්‍ය Dependencies ටික install කිරීම
+# Chromium සහ සියලුම Linux Dependencies Install කිරීම
 RUN apt-get update && apt-get install -y \
     chromium \
     fonts-liberation \
@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Environment variables set කිරීම
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
@@ -24,6 +23,6 @@ RUN npm install --production
 
 COPY . .
 
-EXPOSE 8000
+EXPOSE 3000
 
 CMD ["node", "server.js"]
